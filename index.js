@@ -13,14 +13,24 @@ async function main() {
     return ! _.contains(_.keys(results), w);
   });
   for (const repo of toFetch) {
-    const info = getAllRepoInfo(repo);
+    const info = await getAllRepoInfo(repo);
     results[repo] = info;
     fs.writeFileSync('./results.json', JSON.stringify(results, null, 2));
   }
 }
 
 async function getAllRepoInfo(repo) {
-  return {};
+  const headers = process.env.GITHUB_TOKEN ? {
+    'Authorization': `token ${process.env.GITHUB_TOKEN}`
+  }: {};
+  const repoInfo = (await axios({
+    method: 'get',
+    url: `https://api.github.com/repos/${repo}`,
+    headers: headers,
+  })).data;
+  return {
+    repoInfo,
+  };
 }
 
 main();
