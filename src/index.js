@@ -7,7 +7,7 @@ const _ = require('lodash');
 const moment = require('moment');
 const fs = require('fs');
 
-var DATE_FORMAT = 'YYYY-MM-DD';
+const DATE_FORMAT = 'YYYY-MM-DD';
 
 let config = {
   // Maximum time diff between 2 subsequent commits in minutes which are
