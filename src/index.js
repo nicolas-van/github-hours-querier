@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
-var Promise = require('bluebird');
-var git = require('nodegit');
-var program = require('commander');
-var _ = require('lodash');
-var moment = require('moment');
-var fs = require('fs');
+const Promise = require('bluebird');
+const git = require('nodegit');
+const program = require('commander');
+const _ = require('lodash');
+const moment = require('moment');
+const fs = require('fs');
 
-var DATE_FORMAT = 'YYYY-MM-DD';
+const DATE_FORMAT = 'YYYY-MM-DD';
 
-var config = {
+let config = {
   // Maximum time diff between 2 subsequent commits in minutes which are
   // counted to be in the same coding "session"
   maxCommitDiffInMinutes: 60,
@@ -29,9 +29,9 @@ var config = {
 
   // Aliases of emails for grouping the same activity as one person
   emailAliases: {
-    'linus@torvalds.com': 'linus@linux.com'
+    'linus@torvalds.com': 'linus@linux.com',
   },
-  branch: null
+  branch: null,
 };
 
 function main() {
@@ -44,9 +44,9 @@ function main() {
 
   // Poor man`s multiple args support
   // https://github.com/tj/commander.js/issues/531
-  for (var i = 0; i < process.argv.length; i++) {
-    var k = process.argv[i];
-    var n = i <= process.argv.length - 1 ? process.argv[i + 1] : undefined;
+  for (let i = 0; i < process.argv.length; i++) {
+    const k = process.argv[i];
+    let n = i <= process.argv.length - 1 ? process.argv[i + 1] : undefined;
     if (k == '-e' || k == '--email') {
       parseEmailAlias(n);
     } else
@@ -57,20 +57,20 @@ function main() {
   }
 
   getCommits(config.gitPath, config.branch).then(function(commits) {
-    var commitsByEmail = _.groupBy(commits, function(commit) {
-      var email = commit.author.email || 'unknown';
+    const commitsByEmail = _.groupBy(commits, function(commit) {
+      let email = commit.author.email || 'unknown';
       if (config.emailAliases !== undefined && config.emailAliases[email] !== undefined) {
         email = config.emailAliases[email];
       }
       return email;
     });
 
-    var authorWorks = _.map(commitsByEmail, function(authorCommits, authorEmail) {
+    const authorWorks = _.map(commitsByEmail, function(authorCommits, authorEmail) {
       return {
         email: authorEmail,
         name: authorCommits[0].author.name,
         hours: estimateHours(_.pluck(authorCommits, 'date')),
-        commits: authorCommits.length
+        commits: authorCommits.length,
       };
     });
 
@@ -78,19 +78,19 @@ function main() {
     // in the same order as the keys were added. This is anyway just for
     // making the output easier to read, so it doesn't matter if it
     // isn't sorted in some cases.
-    var sortedWork = {};
+    const sortedWork = {};
 
     _.each(_.sortBy(authorWorks, 'hours'), function(authorWork) {
       sortedWork[authorWork.email] = _.omit(authorWork, 'email');
     });
 
-    var totalHours = _.reduce(sortedWork, function(sum, authorWork) {
+    const totalHours = _.reduce(sortedWork, function(sum, authorWork) {
       return sum + authorWork.hours;
     }, 0);
 
     sortedWork.total = {
       hours: totalHours,
-      commits: commits.length
+      commits: commits.length,
     };
 
     console.log(JSON.stringify(sortedWork, undefined, 2));
@@ -227,7 +227,7 @@ function parseUntilDate(until) {
 
 function parseEmailAlias(alias) {
   if (alias.indexOf('=') > 0) {
-    var email = alias.substring(0, alias.indexOf('=')).trim();
+    const email = alias.substring(0, alias.indexOf('=')).trim();
     alias = alias.substring(alias.indexOf('=') + 1).trim();
     // console.warn("Adding alias " + email + " -> " + alias);
     if (config.emailAliases === undefined) {
@@ -249,25 +249,24 @@ function mergeDefaultsWithArgs(conf) {
     gitPath: program.path || conf.gitPath,
     mergeRequest: program.mergeRequest !== undefined ? (program.mergeRequest == 'true') :
       conf.mergeRequest,
-    branch: program.branch || conf.branch
+    branch: program.branch || conf.branch,
   };
 }
 
 // Estimates spent working hours based on commit dates
 function estimateHours(dates) {
-
   // Oldest commit first, newest last
-  var sortedDates = dates.sort(function(a, b) {
+  const sortedDates = dates.sort(function(a, b) {
     return a - b;
   });
-  var currentMinutes = config.firstCommitAdditionInMinutes;
-  var lastDate = null;
+  let currentMinutes = config.firstCommitAdditionInMinutes;
+  let lastDate = null;
   _.forEach(sortedDates, function(date) {
     if (lastDate === null) {
       lastDate = date;
       return;
     }
-    var diffInMinutes = (date - lastDate) / 1000 / 60;
+    const diffInMinutes = (date - lastDate) / 1000 / 60;
     if (diffInMinutes < config.maxCommitDiffInMinutes) {
       currentMinutes += diffInMinutes;
     } else {
@@ -283,15 +282,14 @@ function estimateHours(dates) {
 function getCommits(gitPath, branch) {
   return git.Repository.open(gitPath)
     .then(function(repo) {
-      var allReferences = getAllReferences(repo);
-      var filterPromise;
+      const allReferences = getAllReferences(repo);
+      let filterPromise;
 
       if (branch) {
         filterPromise = Promise.filter(allReferences, function(reference) {
           return (reference == ('refs/heads/' + branch));
         });
-      }
-      else {
+      } else {
         filterPromise = Promise.filter(allReferences, function(reference) {
           return reference.match(/refs\/heads\/.*/);
         });
@@ -312,7 +310,7 @@ function getCommits(gitPath, branch) {
         }, [])
         .then(function(commits) {
           // Multiple branches might share commits, so take unique
-          var uniqueCommits = _.uniq(commits, function(item) {
+          const uniqueCommits = _.uniq(commits, function(item) {
             return item.sha;
           });
 
@@ -340,35 +338,35 @@ function getBranchLatestCommit(repo, branchName) {
 
 function getBranchCommits(branchLatestCommit) {
   return new Promise(function(resolve, reject) {
-    var history = branchLatestCommit.history();
-    var commits = [];
+    const history = branchLatestCommit.history();
+    const commits = [];
 
     history.on('commit', function(commit) {
-      var author = null;
+      let author = null;
       if (!_.isNull(commit.author())) {
         author = {
           name: commit.author().name(),
-          email: commit.author().email()
+          email: commit.author().email(),
         };
       }
 
-      var commitData = {
+      const commitData = {
         sha: commit.sha(),
         date: commit.date(),
         message: commit.message(),
-        author: author
+        author: author,
       };
 
-      var isValidSince = true;
-      var sinceAlways = config.since === 'always' || !config.since;
+      let isValidSince = true;
+      const sinceAlways = config.since === 'always' || !config.since;
       if (sinceAlways || moment(commitData.date.toISOString()).isAfter(config.since)) {
         isValidSince = true;
       } else {
         isValidSince = false;
       }
 
-      var isValidUntil = true;
-      var untilAlways = config.until === 'always' || !config.until;
+      let isValidUntil = true;
+      const untilAlways = config.until === 'always' || !config.until;
       if (untilAlways || moment(commitData.date.toISOString()).isBefore(config.until)) {
         isValidUntil = true;
       } else {
