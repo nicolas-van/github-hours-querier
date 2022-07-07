@@ -20,7 +20,7 @@
     "commander": "^2.2.0",
     "dotenv": "^8.1.0",
     "lodash": "^2.4.1",
-    "moment": "^2.10.6",
+    "moment": "^2.29.4",
     "nodegit": "^0.25.1"
   },
   "devDependencies": {
